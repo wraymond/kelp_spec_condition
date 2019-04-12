@@ -1,0 +1,63 @@
+---
+title: "Kelp_condition_nuts"
+author: "Wendel Raymond"
+date: "April 12, 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Isotopes, nutrients, and summary data
+This scripts will summarize isotope, nutrient and other non-spectral data from kelp tissues on POW.
+
+```{r libraries}
+library(ggplot2)
+library(dplyr)
+theme_set(theme_classic())
+```
+
+
+## Data
+```{r data}
+iso <- read.csv("../Other Data/Kelp_CN_data.csv", header = TRUE, stringsAsFactors = FALSE)
+
+nut <- read.csv("../Other Data/Water_nutrients_2018_All.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+## Isotope data
+```{r iso}
+ggplot(iso) +
+  geom_point(aes(x = del_C, y = del_N, color = percent_N), size = 4) +
+  scale_color_gradientn(colours = rainbow(5)) +
+  geom_text(aes(x = del_C, y = del_N, label = row.names(iso)), hjust = 0, nudge_x = 0.15) +
+  scale_x_continuous(limits = c(-20.0, -10), breaks = c(-20, -18, -16, -14, -12, -10)) +
+  scale_y_continuous(limits = c(4, 10), breaks = c(4, 5, 6, 7, 8 ,9, 10)) +
+  labs(x = expression(delta~"C"), y = expression(delta~"N")) +
+  theme(text = element_text(size=20))
+```
+
+## Nutrient data
+First need to filter data to what makes sense for this project.
+1) All WR 2018_H/L sites
+
+```{r nuts sum}
+## reduce ##
+nut.redu <- nut[c(1:29, 59:74, 88:95), ]
+  
+## Summarize ##
+nut.sum <- nut.redu %>% 
+  group_by(Site, Depth_m) %>% 
+  summarise(Nitrate = mean(Nitrate_um.L),
+            NitraNitri = mean(NitrateNitrite_um.L),
+            Phosph = mean(Phos_um.L),
+            Nitrate_sd = sd(Nitrate_um.L),
+            NitraNitri_sd = sd(NitrateNitrite_um.L),
+            Phosph_sd = sd(Phos_um.L))
+```
+
+plots
+```{r nut plots}
+ggplot(nut.sum) +
+  geom_col(aes(x = Site, y = Nitrate, fill = Depth_m), position = "dodge")
+```
+
