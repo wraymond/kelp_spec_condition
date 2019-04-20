@@ -12,7 +12,9 @@ This scripts will summarize isotope, nutrient and other non-spectral data from k
 
 ```{r libraries}
 library(ggplot2)
+library(ggrepel)
 library(dplyr)
+library(LaCroixColoR)
 theme_set(theme_classic())
 ```
 
@@ -22,7 +24,62 @@ theme_set(theme_classic())
 iso <- read.csv("../Other Data/Kelp_CN_data.csv", header = TRUE, stringsAsFactors = FALSE)
 
 nut <- read.csv("../Other Data/Water_nutrients_2018_All.csv", header = TRUE, stringsAsFactors = FALSE)
+
+chl <- read.csv("../Other Data/Kelp_ChlC.csv", header = TRUE, stringsAsFactors = FALSE)
+
+spec <- read.csv("../Other Data/kelp_spectra.csv", header = TRUE, stringsAsFactors = FALSE)
+
+oce <- read.csv("../Other Data/Site_oceanography_2018_RAW.csv", header = TRUE, stringsAsFactors = FALSE)
 ```
+
+color pallette
+```{r}
+pal <- lacroix_palette("PeachPear")
+```
+
+## Spectral data
+Plot of representative N content blades reflectance
+```{r spec plot}
+ggplot(spec) +
+  geom_line(aes(x = wv, y = low), lwd = 2, col = pal[1]) +
+  geom_line(aes(x = wv, y = mid), lwd = 2, col = pal[4]) +
+  geom_line(aes(x = wv, y = high), lwd = 2, col = pal[6]) +
+  geom_vline(xintercept = 655, lty = "dashed") +
+  geom_vline(xintercept = 670, lty = "dashed") +
+  scale_x_continuous(limits = c(450, 750), breaks = seq(450, 750, 50)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  labs(x = "Wavelength (nm)", y = "% Reflectance") +
+  theme(text = element_text(size = 32))
+```
+
+Plot of spec N and lab N
+```{r obs v lab}
+ggplot(chl) +
+  geom_point(aes(x = Lab_N, y = Blade_N), size = 3, pch = 1) +
+  geom_text_repel(aes(x = Lab_N, y = Blade_N, label = Site_code), nudge_x = 0.1, size = 8) +
+  geom_abline(intercept = 0, slope = 1, lty = "dashed", lwd = 1.5) +
+  scale_x_continuous(limits = c(0, 3.5), breaks = seq(0, 3.5, 0.5)) +
+  scale_y_continuous(limits = c(0, 3.5), breaks = seq(0, 3.5, 0.5)) +
+  labs(x = "% N Laboratory", y = "% N Spectral") +
+  theme(text = element_text(size = 32))
+
+summary(lm(chl$Blade_N ~ chl$Lab_N))
+```
+
+Plot spec N and water N
+```{r obs v seawater}
+ggplot(chl) +
+  geom_point(aes(x = SeaW.N, y = Mean_N), size = 3, pch = 1) +
+  geom_text_repel(aes(x = SeaW.N, y = Mean_N, label = Site_code), nudge_x = 0.01, size = 8) +
+  geom_abline(intercept = 0.08101, slope = 3.39495, lwd = 1.5, lty = "dashed") +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  scale_y_continuous(limits = c(0, 3.5), breaks = seq(0, 3.5, 0.5)) +
+  labs(x = "Seawater Nitrite + Nitrate (umol/L)", y = "% N Spectral") +
+  theme(text = element_text(size = 32))
+
+summary(lm(chl$Mean_N ~ chl$SeaW.N))
+```
+
 
 ## Isotope data
 ```{r iso}
@@ -33,7 +90,8 @@ ggplot(iso) +
   scale_x_continuous(limits = c(-20.0, -10), breaks = c(-20, -18, -16, -14, -12, -10)) +
   scale_y_continuous(limits = c(4, 10), breaks = c(4, 5, 6, 7, 8 ,9, 10)) +
   labs(x = expression(delta~"C"), y = expression(delta~"N")) +
-  theme(text = element_text(size=20))
+  
+  theme(text = element_text(size= 32))
 ```
 
 ## Nutrient data
@@ -54,6 +112,12 @@ nut.sum <- nut.redu %>%
             NitraNitri_sd = sd(NitrateNitrite_um.L),
             Phosph_sd = sd(Phos_um.L))
 ```
+
+## Other oceanography
+```{r}
+
+```
+
 
 plots
 ```{r nut plots}
